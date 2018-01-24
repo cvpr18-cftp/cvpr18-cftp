@@ -1,0 +1,23 @@
+net: "./Network/prn_input_train_val.prototxt"
+test_iter: 500
+test_interval: 1000
+
+base_lr: 0.001
+lr_policy: "multistep"
+gamma: 0.1
+stepvalue: [10000,15000,20000,25000]
+max_iter: 40000
+
+iter_size: 2
+
+display: 100
+average_loss: 20
+
+momentum: 0.9
+weight_decay: 0.0005
+clip_gradients: 80
+
+snapshot: 1000
+snapshot_prefix: "./Model/anet_prn"
+test_initialization: true
+

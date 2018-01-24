@@ -1,0 +1,310 @@
+name: "Seq_Fea_Learn"
+
+########################
+### feature data layer
+########################
+
+layer{
+  name: "fea_data"
+  type: "Data"
+  top: "fea_data"
+  data_param{
+   source: "./Data/anet_clip_sequence_val_all_lmdb"
+   batch_size: 16
+   backend: LMDB
+  }
+  include {
+    phase: TEST
+  }	
+}
+
+########################
+### setence data layer
+########################
+
+layer{
+  name: "seq_data"
+  type: "Data"
+  top: "seq_data"
+  data_param{
+   source: "W:/LSTM/LMDB/anet_clip_sequence_train_label_lmdb"
+   batch_size: 16
+   backend: LMDB
+  }
+  include {
+    phase: TEST
+  }		
+}
+
+
+#####################
+## slice layer
+#####################
+
+layer {
+	name: "slice_sentence" 
+	type: "Slice" 
+	bottom: "seq_data"
+    top: "cont" 
+	top: "input" 
+	top: "target"
+    slice_param {
+	  slice_dim: 1 
+	  slice_point: 100 
+	  slice_point: 200
+	}
+}
+
+layer { 
+	name: "silence" 
+	type: "Silence" 
+	bottom: "input" 
+}
+
+#-------------- qiu layers ----------------
+#-------------- reshape layers ----------------
+layer {
+  name: "fea_data_reshape"
+  type: "Reshape"
+  bottom: "fea_data"
+  top: "fea_data_reshape"
+  reshape_param {
+    shape {
+	  dim: 0
+	  dim: 100
+	  dim: 2048
+	}
+  }
+}
+layer {
+  name: "cont_reshape"
+  type: "Reshape"
+  bottom: "cont"
+  top: "cont_reshape"
+  reshape_param {
+    shape {
+	  dim: 0
+	  dim: 100
+	}
+  }
+}
+#layer {
+#  name: "input_reshape"
+#  type: "Reshape"
+#  bottom: "input"
+#  top: "input_reshape"
+#  reshape_param {
+#    shape {
+#	  dim: 0
+#	  dim: 100
+#	}
+#  }
+#}
+#layer {
+#  name: "input_embedding"
+#  type: "Embed"
+#  bottom: "input_reshape"
+#  top: "input_embedding"
+#  param {
+#    lr_mult: 1
+#  }
+#  embed_param {
+#    bias_term: false
+#    input_dim: 3
+#    num_output: 256
+#    weight_filler {
+#      type: "uniform"
+#      min: -0.08
+#      max: 0.08
+#    }
+#  }
+#}
+#layer {
+#  name: "input_embedding_dropout"
+#  type: "Dropout"
+#  bottom: "input_embedding"
+#  top: "input_embedding"
+#  dropout_param {
+#	dropout_ratio: 0.5 
+#  }
+#}
+layer {
+  name: "target_reshape"
+  type: "Reshape"
+  bottom: "target"
+  top: "target_reshape"
+  reshape_param {
+    shape {
+	  dim: 0
+	  dim: 100
+	}
+  }
+}
+#-------------- permute layers ----------------
+layer {
+  name: "fea_data_permute"
+  type: "Permute"
+  bottom: "fea_data_reshape"
+  top: "fea_data_permute"
+  permute_param {
+    order: [1, 0, 2]
+  }
+}
+layer {
+  name: "cont_permute"
+  type: "Permute"
+  bottom: "cont_reshape"
+  top: "cont_permute"
+  permute_param {
+    order: [1, 0]
+  }
+}
+
+#layer {
+#  name: "input_permute"
+#  type: "Permute"
+#  bottom: "input_embedding"
+#  top: "input_permute"
+#  permute_param {
+#    order: [1, 0, 2]
+#  }
+#}
+
+layer {
+  name: "target_permute"
+  type: "Permute"
+  bottom: "target_reshape"
+  top: "target_permute"
+  permute_param {
+    order: [1, 0]
+  }
+}
+#-------------- video embed layers ----------------
+#layer {
+#  name: "fea_data_embed"
+#  type: "InnerProduct"
+#  bottom: "fea_data_permute"
+#  top: "fea_data_embed"
+#  param {
+#    lr_mult: 1
+#    decay_mult: 1
+#  }
+#  param {
+#    lr_mult: 2
+#    decay_mult: 0
+#  }
+#  inner_product_param {
+#    num_output: 1024
+#    weight_filler {
+#      type: "xavier"
+#    }
+#    bias_filler {
+#      type: "constant"
+#      value: 0
+#    }
+#	axis: 2
+#  }
+#}
+#
+#layer {
+#  name: "fea_data_embed_dropout"
+#  type: "Dropout"
+#  bottom: "fea_data_embed"
+#  top: "fea_data_embed"
+#  dropout_param {
+#	dropout_ratio: 0.5 
+#  }
+#}
+#-------------- lstm layers ----------------
+#layer {
+#  name: "input_concat"
+#  bottom: "fea_data_embed"
+#  bottom: "input_permute"
+#  top: "input_concat"
+#  type: "Concat"
+#  concat_param {
+#    axis: 2
+#  }
+#}
+
+layer {
+  name: "lstm"
+  type: "LSTM"
+  bottom: "fea_data_permute"
+  bottom: "cont_permute"
+  top: "lstm"
+  recurrent_param {
+    num_output: 1024
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "lstm_dropout"
+  type: "Dropout"
+  bottom: "lstm"
+  top: "lstm"
+  dropout_param {
+    dropout_ratio: 0.5 
+  }
+}
+layer {
+  name: "predict"
+  type: "InnerProduct"
+  bottom: "lstm"
+  top: "predict"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    axis: 2
+  }
+}
+
+
+layer {
+  name: "prob"
+  type: "Softmax"
+  bottom: "predict"
+  top: "prob"
+  include {
+    phase: TEST
+  }
+  softmax_param{
+    axis: 2
+  }
+}
+
+layer {
+  name: "prob_permute"
+  type: "Permute"
+  bottom: "prob"
+  top: "prob_permute"
+  permute_param {
+    order: [1, 0, 2]
+  }
+}
+

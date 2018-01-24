@@ -1,0 +1,220 @@
+name: "Pair_Fea_Learn"
+
+##############
+### data layer
+##############
+
+layer{
+  name: "FEA"
+  type: "Data"
+  top: "data"
+  include{phase:TRAIN}
+  data_param{
+   source: "./Data/pair_lmdb/anet_pair_train_lmdb"
+   batch_size: 128
+   backend: LMDB
+  }
+}
+
+layer{
+  name: "FEA"
+  type: "Data"
+  top: "data"
+  include{phase:TEST}
+  data_param{
+   source: "./Data/pair_lmdb/anet_pair_val_lmdb"
+   batch_size: 128
+   backend: LMDB
+  }
+}
+
+#####################
+### slice layer
+#####################
+layer {
+	name: "slice_triplet" 
+	type: "Slice" 
+	bottom: "data"
+    top: "data_pos" 
+	top: "data_neg"
+    slice_param {
+		slice_dim: 1 
+		slice_point: 2048 
+	}
+}
+
+
+
+#####################
+## fully matrix pos
+#####################
+
+layer{
+  name: "temp_proposal"
+  type: "InnerProduct"
+  bottom: "data_pos"
+  top: "temp_proposal"
+  inner_product_param{
+    num_output: 2048
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+	name: "temp_proposal_w"
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+	name: "temp_proposal_b"
+  }  
+}
+
+layer {
+  name: "relu_temp_proposal"
+  type: "ReLU"
+  bottom: "temp_proposal"
+  top: "temp_proposal"
+}
+
+layer {
+  name: "drop_temp_proposal"
+  type: "Dropout"
+  bottom: "temp_proposal"
+  top: "temp_proposal"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+
+layer{
+  name: "fc_proposal"
+  type: "InnerProduct"
+  bottom: "temp_proposal"
+  top: "fc_proposal"
+  inner_product_param{
+    num_output: 1
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+	name: "fc_proposal_w"
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+	name: "fc_proposal_b"
+  }  
+}
+
+#layer {
+#  name: "score_pos"
+#  type: "Sigmoid"
+#  bottom: "fc_proposal"
+#  top: "score_pos"
+#}
+
+#####################
+## fully matrix neg
+#####################
+
+layer{
+  name: "temp_proposal_neg"
+  type: "InnerProduct"
+  bottom: "data_neg"
+  top: "temp_proposal_neg"
+  inner_product_param{
+    num_output: 2048
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+	name: "temp_proposal_w"
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+	name: "temp_proposal_b"
+  }  
+}
+
+layer {
+  name: "relu_temp_proposal_neg"
+  type: "ReLU"
+  bottom: "temp_proposal_neg"
+  top: "temp_proposal_neg"
+}
+
+layer {
+  name: "drop_temp_proposal_neg"
+  type: "Dropout"
+  bottom: "temp_proposal_neg"
+  top: "temp_proposal_neg"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+
+layer{
+  name: "fc_proposal_neg"
+  type: "InnerProduct"
+  bottom: "temp_proposal_neg"
+  top: "fc_proposal_neg"
+  inner_product_param{
+    num_output: 1
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+	name: "fc_proposal_w"
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+	name: "fc_proposal_b"
+  }  
+}
+
+#layer {
+#  name: "score_neg"
+#  type: "Sigmoid"
+#  bottom: "fc_proposal_neg"
+#  top: "score_neg"
+#}
+
+########################################
+##### Loss Layer
+########################################
+layer {
+  name: "loss"
+  type: "PairwiseRankingLoss"
+  bottom: "fc_proposal"
+  bottom: "fc_proposal_neg"
+  top: "loss"
+  triplet_loss_param {
+    margin: 1
+  }
+}

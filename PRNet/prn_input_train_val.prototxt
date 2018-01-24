@@ -1,0 +1,269 @@
+name: "PRN_Learn"
+
+##############
+### data layer
+##############
+
+layer{
+  name: "FEA"
+  type: "Data"
+  top: "data"
+  include{phase:TRAIN}
+  data_param{
+   source: "./Data/anet_seg_info_train_lmdb"
+   batch_size: 256
+   backend: LMDB
+  }
+}
+
+layer{
+  name: "FEA"
+  type: "Data"
+  top: "data"
+  include{phase:TEST}
+  data_param{
+   source: "./Data/anet_seg_info_val_lmdb"
+   batch_size: 128
+   backend: LMDB
+  }
+}
+
+####################
+### split label
+####################
+layer{
+	name: "slice_label_info" 
+	type: "Slice" 
+	bottom: "data"
+    top: "label_cate"
+	top: "label_complete"
+	top: "feature_s"
+	top: "feature_m"
+	top: "feature_e"
+	slice_param{
+	   slice_dim: 1
+	   slice_point: [1,201,2249,8393]
+	}
+}
+
+layer {
+	name: "feature"
+	type: "Concat"
+	bottom: "feature_s"
+	bottom: "feature_m"
+	bottom: "feature_e"
+	top: "feature"
+	concat_param{axis: 1}
+}
+
+
+
+#####################
+## classify stream 
+#####################
+
+layer{
+  name: "temp_proposal"
+  type: "InnerProduct"
+  bottom: "feature_m"
+  top: "temp_proposal"
+  inner_product_param{
+    num_output: 4096
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+  }  
+}
+
+layer {
+  name: "relu_temp_proposal"
+  type: "ReLU"
+  bottom: "temp_proposal"
+  top: "temp_proposal"
+}
+
+layer {
+  name: "drop_temp_proposal"
+  type: "Dropout"
+  bottom: "temp_proposal"
+  top: "temp_proposal"
+  dropout_param {
+    dropout_ratio: 0.3
+  }
+}
+
+layer{
+  name: "fc_category"
+  type: "InnerProduct"
+  bottom: "temp_proposal"
+  top: "fc_category"
+  inner_product_param{
+    num_output: 201
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+  }  
+}
+
+
+########################################
+##### Accuracy Layer (category)
+########################################
+layer {
+  name: "loss_cate"
+  type: "SoftmaxWithLoss"
+  bottom: "fc_category"
+  bottom: "label_cate"
+  top: "loss_cate"
+  include {
+    phase: TRAIN
+  }
+}
+
+layer {
+  name: "prob_cate"
+  type: "Softmax"
+  bottom: "fc_category"
+  top: "prob_cate"
+  include {
+    phase: TEST
+  }
+}
+
+layer {
+  name: "accuracy_cate"
+  type: "Accuracy"
+  bottom: "prob_cate"
+  bottom: "label_cate"
+  top: "accuracy_cate"
+  include {
+    phase: TEST
+  }
+}
+
+########################################
+##### Complete stream
+########################################
+layer{
+  name: "temp_complete"
+  type: "InnerProduct"
+  bottom: "feature"
+  top: "temp_complete"
+  inner_product_param{
+    num_output: 6144
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+  }  
+}
+
+layer {
+  name: "relu_temp_complete"
+  type: "ReLU"
+  bottom: "temp_complete"
+  top: "temp_complete"
+}
+
+layer {
+  name: "drop_temp_complete"
+  type: "Dropout"
+  bottom: "temp_complete"
+  top: "temp_complete"
+  dropout_param {
+    dropout_ratio: 0.3
+  }
+}
+
+
+##############################################
+#### one complete prediction layer
+##############################################
+layer{
+  name: "fc_com" 
+  type: "InnerProduct" 
+  bottom: "temp_complete" 
+  top: "fc_com"
+  inner_product_param{ 
+	num_output: 200 
+	weight_filler{type: "gaussian" std: 0.001} 
+	bias_filler{type: "constant" value: 0}
+	}
+  param
+  {lr_mult: 10 decay_mult: 1} 
+  param
+  {lr_mult: 20 decay_mult: 0}
+}
+
+layer {
+  name: "prob_complete"
+  type: "TanH"
+  bottom: "fc_com"
+  top: "prob_complete"
+}
+
+############################################
+#### Softmax total
+############################################
+
+
+layer {
+  name: "loss_complete"
+  type: "HardNegMiningHingeLoss"
+  bottom: "prob_complete"
+  bottom: "label_complete"
+  top: "loss_complete"
+  softmax_param{
+    negative_ratio: 0.97
+  }
+  include{
+	phase: TRAIN
+  }
+}
+
+layer {
+  name: "loss_complete"
+  type: "HardNegMiningHingeLoss"
+  bottom: "prob_complete"
+  bottom: "label_complete"
+  top: "loss_complete"
+  softmax_param{
+    negative_ratio: 0.97
+  }
+  include{
+	phase: TEST
+  }
+}
+

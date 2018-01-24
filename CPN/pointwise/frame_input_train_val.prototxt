@@ -1,0 +1,139 @@
+name: "Frame_Learn"
+
+##############
+### data layer
+##############
+
+layer{
+  name: "FEA"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include{phase:TRAIN}
+  data_param{
+   source: "./Data/Frame/anet_train_lmdb"
+   batch_size: 128
+   backend: LMDB
+  }
+}
+
+layer{
+  name: "FEA"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include{phase:TEST}
+  data_param{
+   source: "./Data/Frame/anet_val_lmdb"
+   batch_size: 128
+   backend: LMDB
+  }
+}
+
+
+
+#####################
+## fully matrix  
+#####################
+
+layer{
+  name: "temp_proposal"
+  type: "InnerProduct"
+  bottom: "data"
+  top: "temp_proposal"
+  inner_product_param{
+    num_output: 2048
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+  }  
+}
+
+layer {
+  name: "relu_temp_proposal"
+  type: "ReLU"
+  bottom: "temp_proposal"
+  top: "temp_proposal"
+}
+
+layer {
+  name: "drop_temp_proposal"
+  type: "Dropout"
+  bottom: "temp_proposal"
+  top: "temp_proposal"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+
+layer{
+  name: "fc_proposal"
+  type: "InnerProduct"
+  bottom: "temp_proposal"
+  top: "fc_proposal"
+  inner_product_param{
+    num_output: 2
+	weight_filler{
+	  type: "xavier"
+	}
+	bias_filler{
+	  type: "constant"
+	}
+  }
+  param{
+    lr_mult: 10
+    decay_mult: 1
+  }
+  param{
+    lr_mult: 20
+    decay_mult: 0
+  }  
+}
+
+
+
+########################################
+##### Accuracy Layer
+########################################
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "fc_proposal"
+  bottom: "label"
+  top: "loss"
+  include {
+    phase: TRAIN
+  }
+}
+
+layer {
+  name: "prob"
+  type: "Softmax"
+  bottom: "fc_proposal"
+  top: "prob"
+  include {
+    phase: TEST
+  }
+}
+
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "prob"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
+}
