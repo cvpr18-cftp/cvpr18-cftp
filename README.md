@@ -43,7 +43,7 @@ The data construction tools need the video auxiliary information files and binar
 |-----------------------------------------------------------------|-----------------------------------------------------------------------|
 | VIDEO_NAME_LIST                                                 | each row: train/validation video_name                                 |
 | BINARY_FEATURE (BIN_DIR + PREFIX.SBUFIX)                        | 1 int (D, e.g., 4) + D int (e.g., NCHW) + N\*C\*H\*W float (e.g. 1\*1024\*1\*1) |
-| FEATURE_NAME_LIST (each row corresponding to one feature)       | each row: video_name \space frame_index \space actionness label (0/1) |
+| FEATURE_NAME_LIST (each row corresponding to one feature)       | each row: video_name \space frame_index \space actionness_label (0/1) |
 
 The extracted binary features on THUMOS14/ActivityNet (global_pool in BN-inception and pool5 in Pseudo-3D) will be released with the auxiliary files. 
 
