@@ -39,7 +39,7 @@ int main(int args, char** argv){
 	gflags::SetUsageMessage("sample feature to leveldb/lmdb\n"
 		"for the hashing/feature learning.\n"
 		"Usage:\n"
-		"    sample_video_feature_with_pair.exe [FLAGS] VIDEO_LABEL_NAME_LIST BIN_DIR PAIR_EACH_VIDEO DB_OUTPUT START_FILE_NUM END_FILE_NUM LABEL_DIR PREFIX SUBFIX DIM\n"
+		"    convert_frame_fea_pair.exe [FLAGS] VIDEO_NAME_LIST BIN_DIR PAIR_EACH_VIDEO DB_OUTPUT START_FILE_NUM END_FILE_NUM LABEL_DIR PREFIX SUBFIX DIM\n"
 		"\n"
 		);
 	gflags::ParseCommandLineFlags(&args, &argv, true);

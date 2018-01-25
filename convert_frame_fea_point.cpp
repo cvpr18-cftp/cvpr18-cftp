@@ -264,7 +264,7 @@ int main(int args, char** argv){
 	gflags::SetUsageMessage("sample feature to leveldb/lmdb\n"
 		"for the hashing/feature learning.\n"
 		"Usage:\n"
-		"    sample_video_feature_with_label.exe [FLAGS] VIDEO_LABEL_NAME_LIST BIN_DIR POS_PER_VIDEO NEG_PER_VIDEO\n"
+		"    convert_frame_fea_point.exe [FLAGS] VIDEO_NAME_LIST BIN_DIR POS_PER_VIDEO NEG_PER_VIDEO\n"
 		"	 DB_OUTPUT START_FILE_NUM END_FILE_NUM LABEL_DIR PREFIX SUBFIX Dim SHUFFLE_THRES(!=24321) TSN_FLAG(1: USE tsn) REMOVE_FRAME\n"
 		"\n"
 		);

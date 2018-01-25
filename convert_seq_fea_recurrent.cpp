@@ -41,7 +41,7 @@ int main(int args, char** argv){
 	gflags::SetUsageMessage("Convert the binary features to leveldb/lmdb\n"
 		"for the hashing/feature learning.\n"
 		"Usage:\n"
-		"    convert_video_sequence_with_feature.exe [FLAGS] VIDEO_NAME_LIST BIN_DIR NUM_PER_VIDEO DB_OUTPUT RECORD_FILE START_FILE_NUM END_FILE_NUM LABEL_DIR PREFIX SUBFIX DIM INTERVAL\n"
+		"    convert_seq_fea_recurrent.exe [FLAGS] VIDEO_NAME_LIST BIN_DIR NUM_PER_VIDEO DB_OUTPUT RECORD_FILE START_FILE_NUM END_FILE_NUM LABEL_DIR PREFIX SUBFIX DIM INTERVAL\n"
 		"\n"
 		);
 	gflags::ParseCommandLineFlags(&args, &argv, true);
